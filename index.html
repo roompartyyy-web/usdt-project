@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Premium Token Sale</title>
+<style>
+* { box-sizing: border-box; font-family: Arial, sans-serif; }
+body {
+    margin: 0; min-height: 100vh; display: flex; justify-content: center; align-items: center;
+    background: #04131c; overflow-x: hidden; padding: 20px;
+}
+body:before, body:after {
+    content: ''; position: fixed; border-radius: 50%; filter: blur(140px); z-index: -1;
+}
+body:before { width: 400px; height: 400px; background: #26A17B; left: -120px; top: -120px; }
+body:after { width: 400px; height: 400px; background: #4ade80; right: -120px; bottom: -120px; }
+
+.card {
+    position: relative; overflow: hidden;
+    width: 100%; max-width: 850px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 30px;
+    padding: 30px; color: #fff;
+}
+.card:before {
+    content: ''; position: absolute; top: 0; left: -150%;
+    width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    transform: skewX(-25deg);
+    animation: shine 7s linear infinite;
+}
+@keyframes shine { from { left: -150% } to { left: 200% } }
+
+h1 { text-align: center; margin-bottom: 25px; }
+input, select {
+    width: 100%; padding: 15px; border-radius: 15px; border: none;
+    background: rgba(255, 255, 255, 0.09); color: white; margin: 8px 0 16px; font-size: 16px;
+}
+/* Placeholder en blanc plus clair que le titre */
+input::placeholder { color: rgba(255, 255, 255, 0.7); }
+select option { background: #04131c; color: white; }
+
+.payments {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+}
+.pay {
+    cursor: pointer; text-align: center; padding: 14px; border-radius: 16px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    transition: all 0.3s ease;
+}
+.pay.active { background: #26A17B; border-color: #4ade80; }
+.pay img { width: 42px; height: 42px; object-fit: contain; display: block; margin: auto auto 6px; }
+.pay div { font-size: 14px; font-weight: bold; }
+
+.btn {
+    width: 100%; padding: 16px; border: none; border-radius: 16px;
+    background: linear-gradient(135deg, #26A17B, #4ade80);
+    color: white; font-size: 18px; font-weight: bold; margin-top: 15px; cursor: pointer;
+    text-transform: uppercase; letter-spacing: 1px;
+}
+
+#error { display: none; color: #ff9d9d; font-weight: bold; margin-top: 10px; text-align: center; }
+#step2 { display: none; }
+
+.qr {
+    width: 220px; height: 220px; background: white; color: black;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 20px; margin: 20px auto; font-weight: bold;
+}
+
+.timer { text-align: center; color: #4ade80; font-size: 30px; font-weight: bold; margin-bottom: 20px; }
+
+/* Styles pour l'étape 2 - ALIGNEMENT PARFAIT */
+.crypto-logo-display {
+    text-align: center; margin-bottom: 20px;
+}
+.crypto-logo-display img {
+    width: 60px; height: 60px; object-fit: contain;
+}
+.details-row {
+    background: rgba(0,0,0,0.2); padding: 12px; border-radius: 10px; margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; /* Permet de s'adapter si besoin, mais on force les lignes */
+}
+.details-label {
+    font-weight: bold; color: #ccc; font-size: 15px;
+}
+/* Ce bloc gère le contenu de droite (valeur ou adresse) */
+.details-content {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; /* Aligné à droite */
+    flex: 1;
+    gap: 10px;
+    max-width: 100%;
+}
+.address-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    justify-content: flex-end; /* Le texte et le bouton alignés à droite */
+}
+.address-text {
+    font-family: monospace; 
+    background: rgba(255,255,255,0.1); 
+    padding: 5px 8px;
+    border-radius: 5px; 
+    font-size: 14px; 
+    color: #fff;
+    /* FORCE UNE SEULE LIGNE */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Ajoute ... si trop long */
+    max-width: 200px; /* Largeur max sur mobile */
+    min-width: 0; /* Important pour text-overflow */
+}
+.copy-btn {
+    background: white; 
+    color: black; 
+    border: none; 
+    padding: 5px 12px;
+    border-radius: 5px; 
+    cursor: pointer; 
+    font-size: 12px; 
+    font-weight: bold;
+    white-space: nowrap;
+    flex-shrink: 0; /* Le bouton ne rétrécit pas */
+}
+.copy-btn:hover { background: #eee; }
+
+/* Styles pour le cadre d'instructions de paiement par carte */
+.card-instructions {
+    background: rgba(38, 161, 123, 0.2); 
+    border: 1px solid rgba(38, 161, 123, 0.5); 
+    padding: 15px; 
+    border-radius: 15px; 
+    margin-bottom: 20px;
+}
+.card-instructions h3 {
+    margin-top: 0; 
+    color: #4ade80; 
+    text-align: center;
+}
+.card-instructions ol {
+    margin: 10px 0; 
+    padding-left: 20px;
+}
+.card-instructions li {
+    margin-bottom: 10px; 
+    line-height: 1.4;
+}
+.pay-btn {
+    background: linear-gradient(135deg, #26A17B, #4ade80);
+    color: white; 
+    border: none; 
+    padding: 12px 20px;
+    border-radius: 10px; 
+    font-weight: bold; 
+    cursor: pointer; 
+    display: block; 
+    margin: 15px auto 0;
+    text-transform: uppercase; 
+    letter-spacing: 1px;
+    width: 100%;
+}
+.pay-btn:hover {
+    background: linear-gradient(135deg, #4ade80, #26A17B);
+}
+
+@media(max-width: 700px) {
+    .payments { grid-template-columns: 1fr 1fr; }
+    .card { padding: 20px; }
+    .address-text {
+        max-width: 140px; /* Réduit la largeur max sur mobile */
+        font-size: 12px;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+
+<div id="step1">
+<h1>Purchase USDT</h1>
+
+<select id="pack">
+<option value="">Select Package</option>
+<option value="1|2">$1 → 2 USDT</option>
+<option value="50|1000">$50 → 1000 USDT</option>
+<option value="100|5000">$100 → 5000 USDT</option>
+<option value="500|200000">$500 → 200000 USDT</option>
+</select>
+
+<!-- Placeholder en blanc clair -->
+<input id="wallet" placeholder="Enter your Solana wallet address">
+
+<div class="payments">
+<div class="pay" onclick="pick(this,'CARD')">
+<img src="https://assets.zyrosite.com/8RfeZqtoYRgGTL0d/capture-daa-c-cran-2026-05-29-032309-skVTxsRXDHCFW51q.png">
+<div>CARD</div>
+</div>
+
+<div class="pay" onclick="pick(this,'BTC')">
+<img src="https://assets.zyrosite.com/8RfeZqtoYRgGTL0d/bitcoin.svg-NPaxaTT3IZt6fQaF.png">
+<div>BTC</div>
+</div>
+
+<div class="pay" onclick="pick(this,'ETH')">
+<img src="https://assets.zyrosite.com/8RfeZqtoYRgGTL0d/images-fotor-2026052931356-uFGdydedEVfOBg52.png">
+<div>ETH</div>
+</div>
+
+<div class="pay" onclick="pick(this,'SOL')">
+<img src="https://assets.zyrosite.com/8RfeZqtoYRgGTL0d/capture-daa-c-cran-2026-05-29-030758-fotor-2026052931143-9eNipYHLH7QgPcgO.png">
+<div>SOL</div>
+</div>
+
+<div class="pay" onclick="pick(this,'USDT ERC20')">
+<img src="https://assets.zyrosite.com/8RfeZqtoYRgGTL0d/tether_usdt-EZDiAC8HxVwg9ifO.png">
+<div>USDT ERC20</div>
+</div>
+
+<div class="pay" onclick="pick(this,'USDT TRC20')">
+<img src="https://assets.zyrosite.com/8RfeZqtoYRgGTL0d/tether_usdt-EZDiAC8HxVwg9ifO.png">
+<div>USDT TRC20</div>
+</div>
+</div>
+
+<!-- Champ pour le code de parrainage déplacé tout en bas -->
+<input id="referral" placeholder="Enter your referral code (optional)">
+
+<div id="error"></div>
+<button class="btn" onclick="goNext()">Continue</button>
+</div>
+
+<div id="step2">
+<h1>Payment Details</h1>
+
+<!-- Logo crypto -->
+<div class="crypto-logo-display" id="crypto-logo-display"></div>
+
+<!-- Conteneur pour tous les détails -->
+<div id="details"></div>
+
+<!-- Instructions pour paiement par carte (affiché uniquement si CARD est sélectionné) -->
+<div id="card-instructions" style="display: none;">
+    <div class="card-instructions">
+        <h3>Card Payment Instructions</h3>
+        <ol>
+            <li>Copy the SOL address and the exact amount to send</li>
+            <li>Click on the "PAY" button to be redirected to Simplex, our payment partner</li>
+            <li>On Simplex, select SOL, enter the exact amount in SOL and the address we provided</li>
+            <li>Once we receive the SOL payment, we will send your USDT</li>
+        </ol>
+        <button class="pay-btn" onclick="window.open('https://buy.simplex.com/', '_blank')">PAY</button>
+    </div>
+</div>
+
+<div class="qr">QR CODE</div>
+
+<!-- Cadre Wallet à la place de "Payment Address from Render" -->
+<div class="details-row">
+    <span class="details-label">Wallet:</span>
+    <div class="address-container">
+        <span class="address-text" id="payment-wallet">PAYMENT_ADDRESS_FROM_RENDER</span>
+        <button class="copy-btn" onclick="copyAddress('PAYMENT_ADDRESS_FROM_RENDER')">COPIER</button>
+    </div>
+</div>
+
+<div class="timer" id="timer">45:00</div>
+
+<button class="btn" onclick="goBack()">Back</button>
+</div>
+
+</div>
+
+<script>
+let method='';
+let timerInterval=null;
+
+function pick(el,m){
+document.querySelectorAll('.pay').forEach(x=>x.classList.remove('active'));
+el.classList.add('active');
+method=m;
+}
+
+function err(t){
+let e=document.getElementById('error');
+e.style.display='block';
+e.innerText=t;
+}
+
+// Validation SOLANA STRICTE (32-44 chars, Base58 uniquement)
+function isValidSolanaAddress(address){
+    if(!address) return false;
+    
+    // Longueur exacte
+    if (address.length < 32 || address.length > 44) return false;
+
+    // Pas de préfixes d'autres chains
+    if(address.startsWith('0x') || address.startsWith('bc1') || 
+       address.startsWith('1') || address.startsWith('3') || 
+       address.startsWith('T') || address.startsWith('0X')) {
+        return false;
+    }
+
+    // Regex Base58 pour Solana
+    const solRegex=/^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+    return solRegex.test(address);
+}
+
+async function goNext(){
+document.getElementById('error').style.display='none';
+
+const pack=document.getElementById('pack').value;
+const wallet=document.getElementById('wallet').value.trim();
+const referral=document.getElementById('referral').value.trim(); // Récupération du code de parrainage
+
+if(!pack) return err('Please select a package');
+if(!wallet) return err('Please enter your Solana address');
+
+if(!isValidSolanaAddress(wallet)){
+    return err('Invalid Solana wallet address. Address must be 32-44 characters (Base58 format).');
+}
+
+if(!method) return err('Please select a payment method');
+
+const usd=Number(pack.split('|')[0]);
+const token=pack.split('|')[1];
+
+let amount='';
+let usdAmountText = '';
+let solAmount = ''; // Nouvelle variable pour stocker le montant en SOL
+
+try{
+if(['BTC','ETH','SOL'].includes(method)){
+    const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd');
+    const p=await r.json();
+
+    if(method==='BTC'){
+        amount = (usd/p.bitcoin.usd).toFixed(8) + ' BTC';
+        usdAmountText = usd + '$';
+    }
+    if(method==='ETH'){
+        amount = (usd/p.ethereum.usd).toFixed(6) + ' ETH';
+        usdAmountText = usd + '$';
+    }
+    if(method==='SOL'){
+        amount = (usd/p.solana.usd).toFixed(6) + ' SOL';
+        usdAmountText = usd + '$';
+    }
+}else if(method.includes('USDT')){
+    amount = usd + ' USDT';
+    usdAmountText = usd + '$';
+}else{
+    amount = '$' + usd;
+    usdAmountText = '$' + usd;
+}
+
+// Récupérer le prix du SOL pour le paiement par carte
+const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
+const p=await r.json();
+solAmount = (usd/p.solana.usd).toFixed(6) + ' SOL';
+
+}catch(e){
+amount='Price unavailable';
+usdAmountText = usd + '$';
+solAmount = 'Price unavailable';
+}
+
+// Logos
+const cryptoImages = {
+    'BTC': 'https://assets.zyrosite.com/8RfeZqtoYRgGTL0d/bitcoin.svg-NPaxaTT3IZt6fQaF.png',
+    'ETH': 'https://assets.zyrosite.com/8RfeZqtoYRgGTL0d/images-fotor-2026052931356-uFGdydedEVfOBg52.png',
+    'SOL': 'https://assets.zyrosite.com/8RfeZqtoYRgGTL0d/capture-daa-c-cran-2026-05-29-030758-fotor-2026052931143-9eNipYHLH7QgPcgO.png',
+    'USDT ERC20': 'https://assets.zyrosite.com/8RfeZqtoYRgGTL0d/tether_usdt-EZDiAC8HxVwg9ifO.png',
+    'USDT TRC20': 'https://assets.zyrosite.com/8RfeZqtoYRgGTL0d/tether_usdt-EZDiAC8HxVwg9ifO.png',
+    'CARD': 'https://assets.zyrosite.com/8RfeZqtoYRgGTL0d/capture-daa-c-cran-2026-05-29-032309-skVTxsRXDHCFW51q.png'
+};
+
+document.getElementById('step1').style.display='none';
+document.getElementById('step2').style.display='block';
+
+const logoSrc = cryptoImages[method];
+document.getElementById('crypto-logo-display').innerHTML = logoSrc ? `<img src="${logoSrc}" alt="${method}">` : '';
+
+// Afficher ou masquer les instructions pour paiement par carte
+document.getElementById('card-instructions').style.display = method === 'CARD' ? 'block' : 'none';
+
+// HTML final avec le cadre Wallet déplacé et ajout du code de parrainage s'il existe
+let referralHtml = referral ? `<div class="details-row">
+    <span class="details-label">Referral Code:</span>
+    <div class="details-content">
+        <span style="font-weight:bold">${referral}</span>
+    </div>
+</div>` : '';
+
+// Pour le paiement par carte, afficher le montant en SOL au lieu du montant en USD
+let amountDisplay = method === 'CARD' ? solAmount : amount;
+
+document.getElementById('details').innerHTML=`
+<div class="details-row">
+    <span class="details-label">You Receive:</span>
+    <div class="details-content">
+        <span style="font-weight:bold; font-size:1.1em">${token} USDT</span>
+    </div>
+</div>
+
+<div class="details-row">
+    <span class="details-label">Payment Method:</span>
+    <div class="details-content" style="gap: 5px;">
+        <span style="font-weight:bold">${method}</span>
+    </div>
+</div>
+
+<div class="details-row" style="flex-direction: column; align-items: flex-start;">
+    <span class="details-label" style="margin-bottom: 10px;">Amount To Send:</span>
+    <div style="display: flex; justify-content: space-between; width: 100%;">
+        <span style="font-weight:bold; font-size:1.1em">${usdAmountText}</span>
+        <span style="font-weight:bold; font-size:1.1em">${amountDisplay}</span>
+    </div>
+</div>
+
+${referralHtml}
+`;
+
+let sec = (method==='CARD'?5400:2700);
+clearInterval(timerInterval);
+
+timerInterval=setInterval(()=>{
+let m=Math.floor(sec/60);
+let s=sec%60;
+document.getElementById('timer').innerText=
+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+sec--;
+if(sec<0){
+clearInterval(timerInterval);
+document.getElementById('timer').innerText="EXPIRED";
+}
+},1000);
+}
+
+function goBack(){
+clearInterval(timerInterval);
+document.getElementById('step2').style.display='none';
+document.getElementById('step1').style.display='block';
+
+// Forcer le retour en haut de la page pour corriger le problème de scroll sur mobile
+window.scrollTo(0, 0);
+document.body.scrollTop = 0; // Pour les navigateurs plus anciens
+document.documentElement.scrollTop = 0; // Pour les navigateurs modernes
+}
+
+// Fonction de copie sans pop-up
+function copyAddress(address) {
+navigator.clipboard.writeText(address).catch(err => {
+    console.error('Error: ', err);
+    // Fallback pour les anciens navigateurs
+    const textarea = document.createElement('textarea');
+    textarea.value = address;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+});
+}
+</script>
+
+</body>
+</html>
