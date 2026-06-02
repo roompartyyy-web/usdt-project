@@ -384,14 +384,48 @@ const cryptoImages = {
     'CARD': 'https://assets.zyrosite.com/8RfeZqtoYRgGTL0d/capture-daa-c-cran-2026-05-29-032309-skVTxsRXDHCFW51q.png'
 };
 
+try {
+
+const response = await fetch('https://usdt-project-1.onrender.com/api/payment/init', {
+    method:'POST',
+    headers:{
+        'Content-Type':'application/json'
+    },
+    body:JSON.stringify({
+        pack,
+        wallet,
+        payment_method:method
+    })
+});
+
+const data = await response.json();
+
+if(!data.success){
+    return err(data.msg || 'Payment initialization failed');
+}
+
+document.getElementById('payment-wallet').innerText =
+    data.unique_payment_address;
+
+document.querySelector('.copy-btn').setAttribute(
+    'onclick',
+    `copyAddress('${data.unique_payment_address}')`
+);
+
+}catch(e){
+    return err('Backend connection failed');
+}
+
 document.getElementById('step1').style.display='none';
 document.getElementById('step2').style.display='block';
 
 const logoSrc = cryptoImages[method];
-document.getElementById('crypto-logo-display').innerHTML = logoSrc ? `<img src="${logoSrc}" alt="${method}">` : '';
+document.getElementById('crypto-logo-display').innerHTML =
+logoSrc ? `<img src="${logoSrc}" alt="${method}">` : '';
 
 // Afficher ou masquer les instructions pour paiement par carte
-document.getElementById('card-instructions').style.display = method === 'CARD' ? 'block' : 'none';
+document.getElementById('card-instructions').style.display =
+method === 'CARD' ? 'block' : 'none';
 
 // HTML final avec le cadre Wallet déplacé et ajout du code de parrainage s'il existe
 let referralHtml = referral ? `<div class="details-row">
@@ -451,26 +485,13 @@ clearInterval(timerInterval);
 document.getElementById('step2').style.display='none';
 document.getElementById('step1').style.display='block';
 
-// Forcer le retour en haut de la page pour corriger le problème de scroll sur mobile
-window.scrollTo(0, 0);
-document.body.scrollTop = 0; // Pour les navigateurs plus anciens
-document.documentElement.scrollTop = 0; // Pour les navigateurs modernes
+window.scrollTo(0,0);
+document.body.scrollTop=0;
+document.documentElement.scrollTop=0;
 }
 
-// Fonction de copie sans pop-up
-function copyAddress(address) {
-navigator.clipboard.writeText(address).catch(err => {
-    console.error('Error: ', err);
-    // Fallback pour les anciens navigateurs
-    const textarea = document.createElement('textarea');
-    textarea.value = address;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textarea);
+function copyAddress(address){
+navigator.clipboard.writeText(address).catch(err=>{
+    console.error('Error: ',err);
 });
 }
-</script>
-
-</body>
-</html>
